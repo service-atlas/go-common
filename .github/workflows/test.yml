@@ -1,0 +1,29 @@
+name: test
+run-name: Test by @${{github.actor}}
+
+on:
+  pull_request:
+    types:
+      - synchronize
+      - ready_for_review
+      - reopened
+      - opened
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        name: Checkout
+
+      - uses: actions/setup-go@v6.4.0
+        with:
+          go-version: ${{ vars.GO_VERSION }}
+
+      - uses: taiki-e/install-action@just
+
+      - name: run tests
+        run: just test

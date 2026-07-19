@@ -1,0 +1,57 @@
+name: weekly-test
+run-name: Weekly Full Test
+
+on:
+  schedule:
+    - cron: '0 1 * * MON'
+  workflow_dispatch:
+
+jobs:
+  test:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.COVERAGE_APP_ID }}
+          private-key: ${{ secrets.COVERAGE_SECRET }}
+
+      - uses: actions/checkout@v6
+        name: Checkout
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - uses: actions/setup-go@v6.4.0
+        with:
+          go-version: ${{ vars.GO_VERSION }}
+
+      - name: run tests
+        shell: bash
+        run: |
+          go test -v ./... -covermode=count -coverprofile=coverage.out
+          go tool cover -func=coverage.out -o=coverage.out
+
+      - name: Go Coverage Badge  # Pass the `coverage.out` output to this action
+        uses: tj-actions/coverage-badge-go@v3
+        with:
+          filename: coverage.out
+
+      - name: Verify Changed files
+        uses: tj-actions/verify-changed-files@v20.0.4
+        id: verify-changed-files
+        with:
+          files: README.md
+
+      - name: Commit changes
+        if: steps.verify-changed-files.outputs.files_changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add README.md
+          git commit -m "chore: Updated coverage badge." || echo "No changes to commit"
+          git pull --rebase origin main
+          git push https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/${{ github.repository }}.git HEAD:main
+
