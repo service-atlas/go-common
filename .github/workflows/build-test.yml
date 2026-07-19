@@ -1,0 +1,52 @@
+name: build-test
+run-name: Build and Test by @${{github.actor}}
+
+on:
+  pull_request:
+    types:
+      - synchronize
+      - ready_for_review
+      - reopened
+      - opened
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        name: Checkout
+
+      - name: Cache Go modules
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+
+      - uses: actions/setup-go@v6.4.0
+        with:
+          go-version: ${{ vars.GO_VERSION }}
+
+      - name: build
+        shell: bash
+        run: |
+          go build -o service-atlas-products main.go
+  test:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        name: Checkout
+
+      - uses: actions/setup-go@v6.4.0
+        with:
+          go-version: ${{ vars.GO_VERSION }}
+
+      - uses: taiki-e/install-action@just
+
+      - name: run tests
+        run: just test
