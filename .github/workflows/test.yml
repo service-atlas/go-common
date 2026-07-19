@@ -18,6 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         name: Checkout
+        persist-credentials: false
 
       - uses: actions/setup-go@v6.4.0
         with:
