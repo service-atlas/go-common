@@ -1,5 +1,5 @@
-name: build-test
-run-name: Build and Test by @${{github.actor}}
+name: test
+run-name: Test by @${{github.actor}}
 
 on:
   pull_request:
