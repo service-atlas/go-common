@@ -33,7 +33,7 @@ func getDefaultCORSConfig() CORSConfig {
 }
 
 func GetCORSConfig() CORSConfig {
-	configStr := getEnvVarValue("cors_config")
+	configStr := getEnvVarValue("CORS_CONFIG")
 	slog.Debug("CORS config: ", slog.String("config", configStr))
 	if configStr == "" {
 		return getDefaultCORSConfig()
