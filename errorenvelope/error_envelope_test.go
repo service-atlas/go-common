@@ -1,4 +1,4 @@
-package internal
+package errorenvelope
 
 import (
 	"encoding/json"

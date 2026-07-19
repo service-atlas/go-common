@@ -1,4 +1,4 @@
-package config
+package corsconfig
 
 import (
 	"encoding/json"
