@@ -3,15 +3,21 @@ package httphelpers
 import (
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-var pathValueLookup func(*http.Request, string) string
+var (
+	pathValueLookup   func(*http.Request, string) string
+	pathValueLookupMu sync.RWMutex
+)
 
 // SetPathValueLookup sets a custom function to retrieve values from request paths based on a key.
 func SetPathValueLookup(fn func(*http.Request, string) string) {
+	pathValueLookupMu.Lock()
+	defer pathValueLookupMu.Unlock()
 	pathValueLookup = fn
 }
 
@@ -22,6 +28,8 @@ func getPathValue(req *http.Request, varName string) string {
 	if val != "" {
 		return val
 	}
+	pathValueLookupMu.RLock()
+	defer pathValueLookupMu.RUnlock()
 	if pathValueLookup != nil {
 		return pathValueLookup(req, varName)
 	}
@@ -35,7 +43,10 @@ func GetGuidFromRequestPath(varName string, req *http.Request) (string, bool) {
 
 func IsValidGuid(guidVal string) (string, bool) {
 	err := uuid.Validate(guidVal)
-	return guidVal, err == nil
+	if err != nil {
+		return "", false
+	}
+	return guidVal, true
 }
 
 func GetDateFromRequestPath(varName string, req *http.Request) (time.Time, bool) {

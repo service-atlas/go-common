@@ -16,7 +16,7 @@ func TestGetGuidFromRequestPath(t *testing.T) {
 		ok       bool
 	}{
 		{"Valid GUID", "/service/85622399-b2b7-4e98-9a8d-628e28b9aeb4", "85622399-b2b7-4e98-9a8d-628e28b9aeb4", true},
-		{"Invalid GUID", "/service/invalid-guid", "invalid-guid", false},
+		{"Invalid GUID", "/service/invalid-guid", "", false},
 	}
 
 	for _, tc := range testCases {
@@ -49,7 +49,7 @@ func TestGetDateFromRequestPath(t *testing.T) {
 			pathVars := strings.Split(tc.reqPath, "/")
 			req.SetPathValue("startDate", pathVars[2])
 			dateVal, ok := GetDateFromRequestPath("startDate", req)
-			if dateVal != tc.expected || ok != tc.ok {
+			if !dateVal.Equal(tc.expected) || ok != tc.ok {
 				t.Errorf("GetDateFromRequestPath(%q) = (%v, %v), want (%v, %v)", tc.reqPath, dateVal, ok, tc.expected, tc.ok)
 			}
 		})
@@ -145,7 +145,7 @@ func TestGetGuidFromRequestPath_Override(t *testing.T) {
 		ok       bool
 	}{
 		{"Valid GUID", "85622399-b2b7-4e98-9a8d-628e28b9aeb4", "85622399-b2b7-4e98-9a8d-628e28b9aeb4", true},
-		{"Invalid GUID", "invalid-guid", "invalid-guid", false},
+		{"Invalid GUID", "invalid-guid", "", false},
 	}
 
 	for _, tc := range testCases {
@@ -196,5 +196,34 @@ func TestGetDateFromRequestPath_Override(t *testing.T) {
 				t.Errorf("GetDateFromRequestPath() = (%v, %v), want (%v, %v)", dateVal, ok, tc.expected, tc.ok)
 			}
 		})
+	}
+}
+
+func TestPathValueLookup_Race(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	done := make(chan bool)
+	const iterations = 1000
+
+	go func() {
+		for range iterations {
+			SetPathValueLookup(func(r *http.Request, name string) string {
+				return "test"
+			})
+			SetPathValueLookup(nil)
+		}
+		done <- true
+	}()
+
+	go func() {
+		for range iterations {
+			_, _ = GetIntFromRequestPath("id", req)
+			_, _ = GetGuidFromRequestPath("id", req)
+			_, _ = GetDateFromRequestPath("id", req)
+		}
+		done <- true
+	}()
+
+	for range 2 {
+		<-done
 	}
 }
