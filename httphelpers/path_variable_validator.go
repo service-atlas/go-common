@@ -5,8 +5,7 @@ import (
 	"strconv"
 	"sync"
 	"time"
-
-	"github.com/google/uuid"
+	"uuid"
 )
 
 var (
@@ -42,7 +41,7 @@ func GetGuidFromRequestPath(varName string, req *http.Request) (string, bool) {
 }
 
 func IsValidGuid(guidVal string) (string, bool) {
-	err := uuid.Validate(guidVal)
+	_, err := uuid.Parse(guidVal)
 	if err != nil {
 		return "", false
 	}

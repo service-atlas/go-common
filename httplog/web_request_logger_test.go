@@ -8,8 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/google/uuid"
+	"uuid"
 )
 
 // captureState holds shared state for the capturingHandler so children produced by
