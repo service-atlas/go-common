@@ -5,8 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
-
-	"github.com/google/uuid"
+	"uuid"
 )
 
 // requestKey is the slog attribute key used for the request id in logs.
@@ -25,7 +24,7 @@ func WebRequestLogger(next http.Handler) http.Handler {
 		start := time.Now()
 		id := r.Header.Get("Request-Id")
 		if id == "" {
-			id = uuid.NewString()
+			id = uuid.New().String()
 		}
 		logger := slog.Default().With(slog.String(requestKey, id))
 		ctx := context.WithValue(r.Context(), loggerKey{}, logger)
