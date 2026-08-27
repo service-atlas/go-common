@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"os"
 	"time"
 	"uuid"
 )
@@ -32,6 +33,12 @@ func WebRequestLogger(next http.Handler) http.Handler {
 		// Use a wrapper to get the status code
 		ww := &responseWriter{ResponseWriter: w, status: http.StatusOK}
 		next.ServeHTTP(ww, r.WithContext(ctx))
+
+		logHealth := os.Getenv("LOG_HEALTH") == "true"
+
+		if r.URL.Path == "/health" && !logHealth {
+			return
+		}
 
 		duration := time.Since(start)
 

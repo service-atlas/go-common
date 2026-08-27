@@ -333,3 +333,66 @@ func TestStructuredLoggerWithDefaultStatus(t *testing.T) {
 		t.Errorf("Expected remote '192.168.1.1:12345', got %v", remote)
 	}
 }
+
+func TestStructuredLogger_HealthCheck(t *testing.T) {
+	tests := []struct {
+		name      string
+		path      string
+		logHealth string
+		shouldLog bool
+	}{
+		{
+			name:      "Health check should not log by default",
+			path:      "/health",
+			logHealth: "",
+			shouldLog: false,
+		},
+		{
+			name:      "Health check should not log when LOG_HEALTH is false",
+			path:      "/health",
+			logHealth: "false",
+			shouldLog: false,
+		},
+		{
+			name:      "Health check should log when LOG_HEALTH is true",
+			path:      "/health",
+			logHealth: "true",
+			shouldLog: true,
+		},
+		{
+			name:      "Other paths should always log",
+			path:      "/other",
+			logHealth: "false",
+			shouldLog: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("LOG_HEALTH", tt.logHealth)
+
+			var buf bytes.Buffer
+			jsonHandler := slog.NewJSONHandler(&buf, nil)
+			oldDefault := slog.Default()
+			logger := slog.New(jsonHandler)
+			slog.SetDefault(logger)
+			t.Cleanup(func() { slog.SetDefault(oldDefault) })
+
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			})
+
+			finalHandler := WebRequestLogger(handler)
+
+			req := httptest.NewRequest(http.MethodGet, tt.path, nil)
+			rr := httptest.NewRecorder()
+
+			finalHandler.ServeHTTP(rr, req)
+
+			hasLog := buf.Len() > 0
+			if hasLog != tt.shouldLog {
+				t.Errorf("expected log: %v, got: %v for path %s and LOG_HEALTH=%s", tt.shouldLog, hasLog, tt.path, tt.logHealth)
+			}
+		})
+	}
+}
