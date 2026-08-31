@@ -1,5 +1,5 @@
 # go-common
-![Coverage](https://img.shields.io/badge/Coverage-92.2%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-94.4%25-brightgreen)
 
 `go-common` is a utility module for Go services in the Service Atlas ecosystem, providing commonly used code for HTTP handling, logging, error reporting, and configuration.
 
